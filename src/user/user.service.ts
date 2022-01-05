@@ -14,6 +14,15 @@ export class UserService {
       },
     });
     delete user.password;
+    return user;
+  }
+
+  async getUserForAuth(query: string): Promise<User | null> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ userName: query }, { email: query }],
+      },
+    });
 
     return user;
   }

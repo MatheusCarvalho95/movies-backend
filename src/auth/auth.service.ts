@@ -12,9 +12,14 @@ export class AuthService {
   ) {}
 
   async validateUser(userInput: { userNameOrEmail: string; password: string }) {
-    const user = await this.userService.getOneUser(userInput.userNameOrEmail);
-
-    if (user && !!argon2.verify(user.password, userInput.password)) {
+    const user = await this.userService.getUserForAuth(
+      userInput.userNameOrEmail,
+    );
+    const passwordMatch = await argon2.verify(
+      user.password,
+      userInput.password,
+    );
+    if (user && passwordMatch) {
       delete user.password;
       return user;
     } else {
