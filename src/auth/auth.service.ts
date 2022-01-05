@@ -3,6 +3,7 @@ import { UserService } from 'src/user/user.service';
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
+import { JwtPayload, LoginReponse } from 'src/auth/jwt.interfaces';
 
 @Injectable()
 export class AuthService {
@@ -27,8 +28,8 @@ export class AuthService {
     }
   }
 
-  async login(user: User) {
-    const payload = { userName: user.userName, sub: user.id };
+  async login(user: User): Promise<LoginReponse> {
+    const payload: JwtPayload = { userName: user.userName, sub: user.id };
 
     return {
       access_token: this.jwtService.sign(payload),
