@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { Role, User as UserModel } from '@prisma/client';
 import { CreateUserDTO } from './dto/user.dto';
@@ -26,5 +34,12 @@ export class UserController {
       await this.mailService.sendWellcomeEmail(user);
     }
     return user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.admin, Role.moderator)
+  @Delete('/:id')
+  async deleteuser(@Param() query: { id: string }) {
+    return await this.userService.deleteUser(Number(query.id));
   }
 }

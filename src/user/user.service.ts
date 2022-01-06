@@ -1,11 +1,16 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { User, Prisma } from '@prisma/client';
 import * as argon2 from 'argon2';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => MailService))
+    private mailService: MailService,
+  ) {}
 
   async getOneUser(query: string): Promise<User | null> {
     const user = await this.prisma.user.findFirst({
@@ -64,6 +69,7 @@ export class UserService {
         userName: data.userName,
       },
     });
+    await this.mailService.sendWellcomeEmail(newUser);
 
     delete newUser.password;
     return newUser;
@@ -80,9 +86,26 @@ export class UserService {
     });
   }
 
-  async deleteUser(where: Prisma.UserWhereUniqueInput): Promise<User> {
+  async updatePassword(userId: number, newPassword: string): Promise<User> {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new HttpException('User not found', 404);
+    }
+
+    const hashedPassword = await argon2.hash(newPassword);
+    return this.prisma.user.update({
+      data: {
+        password: hashedPassword,
+      },
+      where: { id: userId },
+    });
+  }
+
+  async deleteUser(id: number): Promise<User> {
     return this.prisma.user.delete({
-      where,
+      where: { id },
     });
   }
 }
